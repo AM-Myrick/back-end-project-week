@@ -1,4 +1,10 @@
-export const addLocalNotesToDB = (notes, db) => {
+const knex = require("knex");
+const knexConfig = require("./knexfile");
+const db = process.env.NODE_ENV
+  ? knex(knexConfig.production)
+  : knex(knexConfig.development);
+
+const addLocalNotesToDB = notes => {
   if (notes === undefined) {
     return;
   }
@@ -15,9 +21,9 @@ export const addLocalNotesToDB = (notes, db) => {
   }
 };
 
-export const loginUser = (notes, db, token, res) => {
+const loginUser = (id, token, res) => {
   return db("notes")
-    .where({ user_id: user.id })
+    .where({ user_id: id })
     .then(notes => {
       return res.status(200).json({
         message: "welcome!",
@@ -30,18 +36,37 @@ export const loginUser = (notes, db, token, res) => {
     });
 };
 
-export const checkCredentials = (req, res) => {
-  const { creds } = req.body;
-
-  if (!creds.username) {
-    return res.status(400).json({
-      error: "Please enter a username."
-    });
+const checkUserCredentials = ({ username, password }) => {
+  if (!username && !password) {
+    return { error: "Please enter a username and password." };
   }
 
-  if (!creds.password) {
-    return res.status(400).json({
-      error: "Please enter a password."
-    });
+  if (!username) {
+    return { error: "Please enter a username." };
   }
+
+  if (!password) {
+    return { error: "Please enter a password." };
+  }
+};
+
+const checkNoteRequirements = ({ title, content }) => {
+  if (!title && !content) {
+    return { error: "Please enter a title and some content in the note." };
+  }
+
+  if (!title) {
+    return { error: "Please enter a title." };
+  }
+
+  if (!content) {
+    return { error: "Please enter some content in the note." };
+  }
+};
+
+module.exports = {
+  addLocalNotesToDB,
+  loginUser,
+  checkUserCredentials,
+  checkNoteRequirements
 };

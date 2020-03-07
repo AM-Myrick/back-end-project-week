@@ -2,7 +2,7 @@ const express = require('express');
 const knex = require("knex");
 const knexConfig = require("../knexfile");
 const db = process.env.NODE_ENV ? knex(knexConfig.production) : knex(knexConfig.development);
-const { authenticate, generateToken } = require('../middleware.js');
+const { authenticate } = require('../middleware.js');
 const router = express.Router();
 
 router.get("/", authenticate, (req, res) => {

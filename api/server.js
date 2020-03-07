@@ -11,6 +11,7 @@ const noteRouter = require("../notes/noteRouter");
 const userRouter = require("../users/userRouter");
 const { authenticate, generateToken } = require('../middleware.js');
 const saltRounds = +process.env.hash || require("../_secrets/keys.js").hash
+const { addLocalNotesToDB, loginUser } = require("../helpers");
 
 const server = express();
 
@@ -32,41 +33,27 @@ server.use("/api/notes", noteRouter);
 server.use("/api/users", userRouter);
 
 server.post("/api/register", (req, res) => {
-  const { creds } = req.body;
+  const { password, username } = req.body.creds;
+  checkCredentials(req, res)
 
-  if (!creds.username) {
-    return res.status(400).json({
-      error: "Please enter a username."
-    });
-  }
-
-  if (!creds.password) {
-    return res.status(400).json({
-      error: "Please enter a password."
-    });
-  }
-
-  const hash = bcrypt.hashSync(creds.password, saltRounds);
-  creds.password = hash;
+  const hash = bcrypt.hashSync(password, saltRounds);
+  password = hash;
 
   db("users")
     .insert(creds, 'id')
     .then(ids => {
       db("notes")
         .insert({
-          title: `Welcome to Paper Notes, ${creds.username}`,
+          title: `Welcome to Paper Notes, ${username}`,
           content: "I hope you enjoy using this site.",
           user_id: ids[0]
         })
-        .then(id => {
-          res.status(200).json({ message: `welcome, user number ${id[0]}` })
+        .then(() => {
+          res.status(200).json({ message: `welcome, ${username}` })
       })
         .catch(err => console.log(err))
     })
-    .catch(err => {
-      console.log(err)
-      res.status(401).json(err)
-    })
+    .catch(err => res.status(401).json(err))
 })
 
 server.post("/api/login", (req, res) => {
@@ -94,35 +81,12 @@ server.post("/api/login", (req, res) => {
       userId = user.id;
       if (user && bcrypt.compareSync(creds.password, user.password)) {
         const token = generateToken(user);
-        db("notes")
-            .where({user_id: user.id})
-            .then(notes => {
-              return notes;
-            })
-            .then(notes => {
-              res.status(200).json({
-                message: 'welcome!',
-                token,
-                notes,
-              })
-            }
-            )
-            .catch(err => res.status(500).json({error: err}))
+        addLocalNotesToDB(notes, db);
+        loginUser(notes, db, token, res);
       } else {
         res.status(401).json({
           message: 'you shall not pass!!'
         });
-      }
-    })
-    .then(() => {
-      for (let note of notes) {
-        if (note.title === "Thanks for using Paper Notes!") {
-          continue;
-        }
-        db("notes")
-          .insert({ title: note.title, content: note.content, user_id: userId })
-          .then(id => res.status(200).json(id))
-          .catch(err => res.status(500).json({error: err}))
       }
     })
     .catch(err => res.json(err));

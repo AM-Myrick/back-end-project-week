@@ -5,6 +5,7 @@ const db = process.env.NODE_ENV
   ? knex(knexConfig.production)
   : knex(knexConfig.development);
 const router = express.Router();
+const { checkNoteRequirements } = require("../helpers");
 
 router.get("/", (req, res) => {
   if (req.decoded.username === "admin") {

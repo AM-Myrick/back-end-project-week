@@ -13,10 +13,11 @@ const authenticate = (req, res, next) => {
       req.decoded = decoded;
       next();
     });
+  } else {
+    return res.status(401).json({
+      error: "No token provided, must be set on the Authorization Header"
+    });
   }
-  return res.status(401).json({
-    error: "No token provided, must be set on the Authorization Header"
-  });
 };
 
 function generateToken(user) {

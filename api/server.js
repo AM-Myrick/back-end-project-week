@@ -41,7 +41,6 @@ server.use("/api/users", userRouter);
 server.post("/api/register", (req, res) => {
   const error = checkUserCredentials(req.body.creds);
   let { password, username } = req.body.creds;
-  console.log(error)
 
   if (error) {
     return res.status(400).json(error);

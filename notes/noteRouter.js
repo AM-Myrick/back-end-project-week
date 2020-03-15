@@ -82,7 +82,6 @@ router.put("/:id", (req, res) => {
             content
           })
           .then(count => {
-            console.log(count);
             count
               ? res.status(200).json(count)
               : res.status(400).json({
